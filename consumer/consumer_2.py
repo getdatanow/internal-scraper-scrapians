@@ -40,23 +40,31 @@ except Exception as e:
 
 
 
-def save_to_postgres(data):
+def save_to_postgres(data, flag):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        insert_query = """
-        INSERT INTO product_details (title, price, image_url, product_url) 
-        VALUES (%s, %s, %s, %s);
-        """
-        
-        cursor.execute(insert_query, (data["title"], data["price"], data["image_url"], data["product_url"]))
+        if flag == "product_details":
+            insert_query = """
+            INSERT INTO product_details (title, price, image_url, product_url) 
+            VALUES (%s, %s, %s, %s);
+            """
+            cursor.execute(insert_query, (data["title"], data["price"], data["image_url"], data["product_url"]))
+            print(f"Data for {data['product_url']} saved to database.")
+        elif flag == "error":
+            insert_query = """
+            INSERT INTO error_url (product_url, remarks) 
+            VALUES (%s, %s);
+            """
+            cursor.execute(insert_query, (data["product_url"], data["remarks"]))
+            print(f"Error for {data['product_url']} saved to database.")
+        else:
+            pass
 
         conn.commit()
-        
         cursor.close()
         conn.close()
-        print(f"Data for {data['product_url']} saved to database.")
     except Exception as e:
         print(f"Error saving data to PostgreSQL: {e}")
 
@@ -71,10 +79,18 @@ def save_consumer():
                 continue
             if msg.error():
                 raise KafkaException(msg.error())
-            data = json.loads(msg.value().decode('utf-8'))
-            print(data)
-            print(f"FROM COM 2:: Consumed crawled data for URL: {data['product_url']}")
-            save_to_postgres(data)
+            
+            try:
+                message = json.loads(msg.value().decode('utf-8'))
+                message_type = message.get("type")
+                if message_type == "product_details":
+                    save_to_postgres(message["data"], flag="product_details")
+                elif message_type == "error":
+                    save_to_postgres(message["data"], flag="error")
+                else:
+                    print("Unknown message type")
+            except Exception as e:
+                print(f"Failed to process message: {e}")
     finally:
         consumer.close()
 
