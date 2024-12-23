@@ -1,19 +1,7 @@
 from confluent_kafka import Producer
 import csv
 import json
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-
-
-KAFKA_BROKER = "localhost:9092"
-KAFKA_TOPIC = "urls"
-
-# Initialize producer
-def delivery_report(err, msg):
-    if err is not None:
-        print(f"Message delivery failed: {err}")
-    else:
-        print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+from config import KAFKA_BROKER, KAFKA_TOPIC, CSV_FILE_PATH, delivery_report
 
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
@@ -31,28 +19,14 @@ def read_and_publish(csv_file):
             else:
                 print("URL column not found for this row.")
             # Send URL as a JSON message to Kafka
-            producer.produce(KAFKA_TOPIC, json.dumps({'url': url}), callback=delivery_report)
+            message = {
+                'url': url,
+                'retry_count': 0
+            }
+            producer.produce(KAFKA_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
+            print(f"Data sent to CONSUMER 1: {message}")
     
     # Flush the producer after the loop, to send all messages at once
     producer.flush()
-
-
-# Main function
-# def watch_csv_file(csv_file_path):
-#     event_handler = FileChangeHandler(csv_file_path)
-#     observer = Observer()
-#     observer.schedule(event_handler, path=csv_file_path, recursive=False)
-#     observer.start()
-
-#     try:
-#         print(f"Watching file: {csv_file_path}")
-#         while True:
-#             time.sleep(1)  # Keep the script running
-#     except KeyboardInterrupt:
-#         print("Stopping file watcher...")
-#         observer.stop()
-#     observer.join()
     
-# Provide the full path using raw string (r"") to avoid escaping issues
-csv_file_path = r"E:\Jyaba\kafka-stack-docker-compose\urls.csv"
-read_and_publish(csv_file_path)
+read_and_publish(CSV_FILE_PATH)

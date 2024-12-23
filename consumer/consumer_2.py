@@ -1,22 +1,13 @@
 from confluent_kafka import Consumer, KafkaException
 import json
 import psycopg2
-
-KAFKA_BROKER = "localhost:9092"
-CRAWLED_DATA_TOPIC = "crawled_data"
+from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, DB_HOST, DB_NAME, DB_USER, DB_PASSWORD
 
 consumer = Consumer({
     'bootstrap.servers': KAFKA_BROKER,
     'group.id': 'saver_group',
     'auto.offset.reset': 'earliest'
 })
-
-
-# PostgreSQL configuration
-DB_HOST = "localhost"
-DB_NAME = "postgres"
-DB_USER = "root"
-DB_PASSWORD = "root"
 
 
 # Initialize PostgreSQL connection
@@ -31,7 +22,7 @@ def get_db_connection():
 try:
     # Try to connect to PostgreSQL
     conn = get_db_connection()
-    print("Connection successful!")
+    print("Connection successful to DB!")
     
     # Close the connection
     conn.close()
@@ -69,7 +60,7 @@ def save_to_postgres(data, flag):
         print(f"Error saving data to PostgreSQL: {e}")
 
 
-def save_consumer():
+def consume_messages():
     consumer.subscribe([CRAWLED_DATA_TOPIC])
 
     try:
@@ -95,4 +86,6 @@ def save_consumer():
         consumer.close()
 
 
-save_consumer()
+if __name__ == '__main__':
+    print("Consumer is now listening for messages on the topic:", CRAWLED_DATA_TOPIC)
+    consume_messages()

@@ -1,50 +1,67 @@
 from confluent_kafka import Consumer, Producer, KafkaException
 import json
-from amazon_crawler import product_details
-import psycopg2
-
-KAFKA_BROKER = "localhost:9092"
-KAFKA_TOPIC = "urls"
-CRAWLED_DATA_TOPIC = "crawled_data"
-
+from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URLS_TOPIC, MAX_RETRIES, delivery_report
+from crawler.amazon_crawler import product_details
 
 consumer = Consumer({
     'bootstrap.servers': KAFKA_BROKER,
     'group.id': 'crawler_group',
     'auto.offset.reset': 'earliest'
 })
-# Kafka Producer
+
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
-def crawl_url(url):
+def crawl_url(url, retry_count):
     try:
-        print("Started crawling")
+        print(f"Attempt {retry_count + 1}: Started crawling {url}")
         data = product_details(url)
         if data:
-            print(f"Data received:: crawling fininded")
-
-        message = {
-            "type": "product_details",
-            "data": data,
-        }  
+            print("Data successfully fetched.")
+            message = {
+                "type": "product_details",
+                "data": data,
+            }
+            # Publish successful message to crawled_data topic
+            producer.produce(CRAWLED_DATA_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
+            print(f"Data sent to CONSUMER 2: {message}")
+            producer.flush()
+            return  # Exit on success
     except Exception as e:
-        remarks=f"Failed to fetch {url}: {e}"
-        data = {
-            "product_url":url,
-            "remarks": remarks,
-        }
-        message = {
-            "type":"error",
-            "data": data,
-        }
-        print(f"Failed to fetch {url}: {e}")
+        print(f"Attempt {retry_count + 1}: Failed to fetch {url}. Error: {e}")
+        if retry_count < MAX_RETRIES - 1:
+            # Republish message with incremented retry_count
+            republish_message(url, retry_count + 1)
+        else:
+            # Publish error message after exhausting retries
+            remarks = f"Failed to fetch {url} after {MAX_RETRIES} retries: {e}"
+            error_message = {
+                "type": "error",
+                "data": {
+                    "product_url": url,
+                    "remarks": remarks,
+                }
+            }
+            producer.produce(CRAWLED_DATA_TOPIC, json.dumps(error_message).encode('utf-8'), callback=delivery_report)
+            print(f"Retry sent to CONSUMER 1 AGAIN: {error_message}")
+            producer.flush()
 
-    # Publish crawled data to the 'crawled_data' topic
-    producer.produce(CRAWLED_DATA_TOPIC, json.dumps(message).encode('utf-8'))
+def republish_message(url, retry_count):
+    """
+        > This function will resend the failed url to crawl to the first consumer.
+        > retry_count will track the no of times the crawler run for the failed url till success
+        > If the url still failed till the max_retires then the url will be send to send consumer to save to db in error_url tables
+    """
+
+    retry_message = {
+        "url": url,
+        "retry_count": retry_count
+    }
+    print(f"Republishing message: {retry_message}")
+    producer.produce(KAFKA_URLS_TOPIC, json.dumps(retry_message).encode('utf-8'))
     producer.flush()
 
 def consume_messages():
-    consumer.subscribe([KAFKA_TOPIC])
+    consumer.subscribe([KAFKA_URLS_TOPIC])
 
     try:
         while True:
@@ -53,12 +70,15 @@ def consume_messages():
                 continue
             if msg.error():
                 raise KafkaException(msg.error())
+
             data = json.loads(msg.value().decode('utf-8'))
-            print(f'data: {data}')
-            url = data['url']
-            print(f"FROM COM 1:: Consumed URL : {url}")
-            crawl_url(url)
+            url = data.get('url')
+            retry_count = data.get('retry_count', 0)  # Default to 0 if not present
+            print(f"Consumed message: {data}")
+            crawl_url(url, retry_count)
     finally:
         consumer.close()
 
-consume_messages()
+if __name__ == '__main__':
+    print("Consumer is now listening for messages on the topic:", {KAFKA_URLS_TOPIC})
+    consume_messages()
