@@ -1,6 +1,12 @@
 from confluent_kafka import Consumer, Producer, KafkaException
 import json
-from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URLS_TOPIC, MAX_RETRIES, delivery_report
+from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, MAX_RETRIES, delivery_report
+from pathlib import Path
+import sys
+
+# Add parent directory to path
+sys.path.append(str(Path(__file__).parent.parent))
+
 from crawler.amazon_crawler import product_details
 
 consumer = Consumer({
@@ -57,11 +63,11 @@ def republish_message(url, retry_count):
         "retry_count": retry_count
     }
     print(f"Republishing message: {retry_message}")
-    producer.produce(KAFKA_URLS_TOPIC, json.dumps(retry_message).encode('utf-8'))
+    producer.produce(KAFKA_URL_TOPIC, json.dumps(retry_message).encode('utf-8'))
     producer.flush()
 
 def consume_messages():
-    consumer.subscribe([KAFKA_URLS_TOPIC])
+    consumer.subscribe([KAFKA_URL_TOPIC])
 
     try:
         while True:
@@ -80,5 +86,5 @@ def consume_messages():
         consumer.close()
 
 if __name__ == '__main__':
-    print("Consumer is now listening for messages on the topic:", {KAFKA_URLS_TOPIC})
+    print("Consumer is now listening for messages on the topic:", {KAFKA_URL_TOPIC})
     consume_messages()

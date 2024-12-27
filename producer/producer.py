@@ -1,11 +1,12 @@
 from confluent_kafka import Producer
 import csv
 import json
-from config import KAFKA_BROKER, KAFKA_TOPIC, CSV_FILE_PATH, delivery_report
+from config import KAFKA_BROKER, KAFKA_URL_TOPIC, CSV_FILE_PATH, delivery_report
 
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
-
+sent_url_count = 0
 def read_and_publish(csv_file):
+    global sent_url_count
     with open(csv_file, mode='r') as file:
         reader = csv.DictReader(file)
         
@@ -23,8 +24,9 @@ def read_and_publish(csv_file):
                 'url': url,
                 'retry_count': 0
             }
-            producer.produce(KAFKA_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
+            producer.produce(KAFKA_URL_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
             print(f"Data sent to CONSUMER 1: {message}")
+            sent_url_count += 1
     
     # Flush the producer after the loop, to send all messages at once
     producer.flush()

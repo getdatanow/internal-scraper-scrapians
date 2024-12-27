@@ -9,7 +9,6 @@ consumer = Consumer({
     'auto.offset.reset': 'earliest'
 })
 
-
 # Initialize PostgreSQL connection
 def get_db_connection():
     return psycopg2.connect(
@@ -18,6 +17,10 @@ def get_db_connection():
         user=DB_USER,
         password=DB_PASSWORD
     )
+
+# Initialize counters
+success_count = 0
+failure_count = 0
 
 try:
     # Try to connect to PostgreSQL
@@ -29,9 +32,8 @@ try:
 except Exception as e:
     print(f"Error connecting to PostgreSQL: {e}")
 
-
-
 def save_to_postgres(data, flag):
+    global success_count, failure_count
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -43,6 +45,7 @@ def save_to_postgres(data, flag):
             """
             cursor.execute(insert_query, (data["title"], data["price"], data["image_url"], data["product_url"]))
             print(f"Data for {data['product_url']} saved to database.")
+            success_count += 1
         elif flag == "error":
             insert_query = """
             INSERT INTO error_url (product_url, remarks) 
@@ -50,6 +53,7 @@ def save_to_postgres(data, flag):
             """
             cursor.execute(insert_query, (data["product_url"], data["remarks"]))
             print(f"Error for {data['product_url']} saved to database.")
+            failure_count += 1
         else:
             pass
 
@@ -57,10 +61,11 @@ def save_to_postgres(data, flag):
         cursor.close()
         conn.close()
     except Exception as e:
+        failure_count += 1
         print(f"Error saving data to PostgreSQL: {e}")
 
-
 def consume_messages():
+    global success_count, failure_count
     consumer.subscribe([CRAWLED_DATA_TOPIC])
 
     try:
@@ -81,10 +86,11 @@ def consume_messages():
                 else:
                     print("Unknown message type")
             except Exception as e:
+                failure_count += 1
                 print(f"Failed to process message: {e}")
     finally:
         consumer.close()
-
+        print(f"Summary: {success_count} success, {failure_count} failures")
 
 if __name__ == '__main__':
     print("Consumer is now listening for messages on the topic:", CRAWLED_DATA_TOPIC)

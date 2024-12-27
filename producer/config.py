@@ -1,9 +1,9 @@
 KAFKA_BROKER = "localhost:9092"
-KAFKA_TOPIC = "urls"
+KAFKA_URL_TOPIC = "urls"
 
 # Provide the full path using raw string (r"") to avoid escaping issues
 # csv_file_path = r"E:\Jyaba\kafka-stack-docker-compose\urls.csv"
-csv_file_path = r"E:\Jyaba\kafka-stack-docker-compose\urls.csv"
+CSV_FILE_PATH = r"E:\Jyaba\kafka-stack-docker-compose\urls.csv"
 
 
 def delivery_report(err, msg):

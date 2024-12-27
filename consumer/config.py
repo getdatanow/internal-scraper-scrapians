@@ -1,5 +1,5 @@
 KAFKA_BROKER = "localhost:9092"
-KAFKA_URLS_TOPIC = "urls"
+KAFKA_URL_TOPIC = "urls"
 CRAWLED_DATA_TOPIC = "crawled_data"
 MAX_RETRIES = 4
 
