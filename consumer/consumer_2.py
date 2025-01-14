@@ -33,11 +33,13 @@ except Exception as e:
     print(f"Error connecting to PostgreSQL: {e}")
 
 def save_to_postgres(data, flag):
+    if isinstance(data, list):
+        data = data[0]
+
     global success_count, failure_count
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
         if flag == "product_details":
             insert_query = """
             INSERT INTO product_details (title, price, image_url, product_url) 
@@ -78,16 +80,22 @@ def consume_messages():
             
             try:
                 message = json.loads(msg.value().decode('utf-8'))
-                message_type = message.get("type")
+                # print(f"Received message: {message}")
+                
+                if "type" not in message or "data" not in message:
+                    raise ValueError("Message missing 'type' or 'data'")
+                
+                message_type = message["type"]
                 if message_type == "product_details":
                     save_to_postgres(message["data"], flag="product_details")
                 elif message_type == "error":
                     save_to_postgres(message["data"], flag="error")
                 else:
-                    print("Unknown message type")
+                    print(f"Unknown message type: {message_type}")
             except Exception as e:
                 failure_count += 1
                 print(f"Failed to process message: {e}")
+
     finally:
         consumer.close()
         print(f"Summary: {success_count} success, {failure_count} failures")

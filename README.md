@@ -214,3 +214,13 @@ Add this environment variable
 ```
 KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE=false
 ```
+### delete the kafka topics
+```
+docker compose -f zk-single-kafka-single.yml up
+```
+```
+docker exec -it <kafka-container-name> bash
+```
+```
+kafka-topics --bootstrap-server localhost:9092 --delete --topic 
+```

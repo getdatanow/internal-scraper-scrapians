@@ -3,11 +3,14 @@ import json
 from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, MAX_RETRIES, delivery_report
 from pathlib import Path
 import sys
+import os
+import multiprocessing
+from scrapy.crawler import CrawlerProcess
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from crawler.amazon_crawler import product_details
+from crawler import bellician_spider
 
 consumer = Consumer({
     'bootstrap.servers': KAFKA_BROKER,
@@ -17,21 +20,60 @@ consumer = Consumer({
 
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
+def worker(url_queue):
+    while not url_queue.empty():
+        url = url_queue.get()
+        process = CrawlerProcess()
+        print(f"url is: {url}")
+        process.crawl(bellician_spider.BellicianSpider, url=url)
+        process.start()
+
+def run_multiprocessing(urls):
+    url_queue = multiprocessing.Queue()
+
+    # for url in urls:
+    #     url_queue.put(url)
+
+    url_queue.put(urls)
+
+    processes = []
+    num_workers = 2  # Use multiple workers (adjust as needed)
+    
+    # Create worker processes
+    for _ in range(num_workers):
+        p = multiprocessing.Process(target=worker, args=(url_queue,))
+        processes.append(p)
+        p.start()  # Start each worker process
+
+    # Wait for all processes to finish
+    for p in processes:
+        p.join()
+        
+
 def crawl_url(url, retry_count):
     try:
         print(f"Attempt {retry_count + 1}: Started crawling {url}")
-        data = product_details(url)
-        if data:
-            print("Data successfully fetched.")
-            message = {
-                "type": "product_details",
-                "data": data,
-            }
-            # Publish successful message to crawled_data topic
-            producer.produce(CRAWLED_DATA_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
-            print(f"Data sent to CONSUMER 2: {message}")
-            producer.flush()
-            return  # Exit on success
+        
+        # run the spider with os.system // second option
+        # os.system(f"scrapy runspider E:\\Jyaba\\kafka-stack-docker-compose\\crawler\\bellician_spider.py -a url={url}")
+
+        # run the spider with the multiprocessing // first option
+        p = run_multiprocessing(url)
+
+
+        # get the data from the spider
+        # data = start_crawl(url)
+        # if data:
+        #     print("Data successfully fetched.")
+        #     message = {
+        #         "type": "product_details",
+        #         "data": data,
+        #     }
+        #     # Publish successful message to crawled_data topic
+        #     producer.produce(CRAWLED_DATA_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
+        #     print(f"Data sent to CONSUMER 2: {message}")
+        #     producer.flush()
+        #     return  # Exit on success
     except Exception as e:
         print(f"Attempt {retry_count + 1}: Failed to fetch {url}. Error: {e}")
         if retry_count < MAX_RETRIES - 1:
