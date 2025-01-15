@@ -37,7 +37,7 @@ def product_details(url):
     for attempt in range(RETRY_TIMES):
         try:
             with httpx.Client(
-                proxy=PROXY_URL,
+                
             ) as client:
                 # with httpx.Client() as client:
                 response = client.get(url=url, headers=headers, timeout=10)
@@ -81,4 +81,4 @@ def product_details(url):
             print(f"Attempt {attempt + 1} failed: {e}")
 
 
-# print(product_details("https://www.amazon.com/dp/157583572X"))
+print(product_details("https://www.amazon.com.au/PUMA-Mens-Cell-Regulate-Sneaker/dp/B0BH452MT7"))

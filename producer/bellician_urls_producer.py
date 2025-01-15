@@ -112,7 +112,7 @@ class BellicianUrlsSpider(scrapy.Spider):
     
     # Add message counter as class variable
     message_count = 0
-    MAX_MESSAGES = 500
+    MAX_MESSAGES = 15
 
 
     custom_settings = {

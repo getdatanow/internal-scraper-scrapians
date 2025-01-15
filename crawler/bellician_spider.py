@@ -1,21 +1,5 @@
 import scrapy
 import json
-import os
-import re
-import hashlib
-
-def generate_unique_filename(url):
-    os.makedirs('scrapy_output', exist_ok=True)
-
-    # Hash the URL to create a unique file name
-    match = re.search(r'[^/]+$', url)  # This will match the part after the last '/'
-    if match:
-        unique_id = match.group(0)
-    else:
-        # If no hash found, fall back to a hash of the entire URL
-        unique_id = hashlib.md5(url.encode('utf-8')).hexdigest()
-
-    return os.path.join('scrapy_output', unique_id + '.json')
 
 class BellicianSpider(scrapy.Spider):
     name = "bellician"
@@ -26,10 +10,9 @@ class BellicianSpider(scrapy.Spider):
         super(BellicianSpider, self).__init__(*args, **kwargs)
         self.url = url
         self.output_file = output_file
-        print(f"Starting to crawl {self.url}")
+        # print(f"Starting to crawl {self.url}")
 
     def start_requests(self):
-        print(f"Starting to crawl {self.url}")
         yield scrapy.Request(self.url,callback=self.parse, errback=self.error_back)
 
     def parse(self, response):
@@ -43,11 +26,7 @@ class BellicianSpider(scrapy.Spider):
             'sku':dat['sku']
         }
         print(f'result for URL: {self.url}::{result_data}')
-
-        # Save the result in the provided output file
-        if self.output_file:
-            with open(self.output_file, 'w') as f:
-                json.dump(result_data, f, indent=4)
+        yield result_data
 
     def error_back(self, failure):
         print(f"Error: {failure}")
@@ -58,3 +37,5 @@ class BellicianSpider(scrapy.Spider):
 
 if __name__ == "__main__":
     product_url = "https://www.bellician.com/products/586c122b5772ec17a0627107"
+    b = BellicianSpider(product_url)
+    
