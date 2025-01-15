@@ -7,7 +7,7 @@ import sys
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from crawler.amazon_crawler import product_details
+from crawler import all_beauty
 
 consumer = Consumer({
     'bootstrap.servers': KAFKA_BROKER,
@@ -20,7 +20,7 @@ producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 def crawl_url(url, retry_count):
     try:
         print(f"Attempt {retry_count + 1}: Started crawling {url}")
-        data = product_details(url)
+        data = all_beauty.runner(url)
         if data:
             print("Data successfully fetched.")
             message = {

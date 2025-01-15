@@ -11,14 +11,16 @@ def read_and_publish(csv_file):
         reader = csv.DictReader(file)
         
         # Print the actual headers to verify they are what we expect
-        print(reader.fieldnames)  # This will print the headers from the CSV
+        # print(reader.fieldnames)  # This will print the headers from the CSV
         
         for row in reader:
             url = row.get('URL')  # Use 'URL' as it appears in the CSV headers
             if url:
-                print(url)  # Process the URL here
+                # print(url)  # Process the URL here
+                pass
             else:
-                print("URL column not found for this row.")
+                # print("URL column not found for this row.")
+                pass
             # Send URL as a JSON message to Kafka
             message = {
                 'url': url,
