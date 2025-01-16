@@ -3,24 +3,36 @@ import json
 from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, MAX_RETRIES, delivery_report
 from pathlib import Path
 import sys
+from kafka import KafkaConsumer
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from crawler import all_beauty
 
-consumer = Consumer({
-    'bootstrap.servers': KAFKA_BROKER,
-    'group.id': 'crawler_group',
-    'auto.offset.reset': 'earliest'
-})
+# consumer = Consumer({
+#     'bootstrap.servers': KAFKA_BROKER,
+#     'group.id': 'crawler_group',
+#     'auto.offset.reset': 'earliest'
+# })
+consumer = KafkaConsumer(
+    KAFKA_URL_TOPIC,
+    bootstrap_servers=f"kafka-testing-taraprasad336-d6e1.c.aivencloud.com:19980",
+    client_id = "CONSUMER_CLIENT_ID",
+    group_id = "CONSUMER_GROUP_ID",
+    security_protocol="SSL",
+    ssl_cafile="ca.pem",
+    ssl_certfile="service.cert",
+    ssl_keyfile="service.key",
+)
+
 
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
 def crawl_url(url, retry_count):
     try:
         print(f"Attempt {retry_count + 1}: Started crawling {url}")
-        data = all_beauty.runner(url)
+        data = all_beauty.main(url)
         if data:
             print("Data successfully fetched.")
             message = {
@@ -34,37 +46,37 @@ def crawl_url(url, retry_count):
             return  # Exit on success
     except Exception as e:
         print(f"Attempt {retry_count + 1}: Failed to fetch {url}. Error: {e}")
-        if retry_count < MAX_RETRIES - 1:
-            # Republish message with incremented retry_count
-            republish_message(url, retry_count + 1)
-        else:
-            # Publish error message after exhausting retries
-            remarks = f"Failed to fetch {url} after {MAX_RETRIES} retries: {e}"
-            error_message = {
-                "type": "error",
-                "data": {
-                    "product_url": url,
-                    "remarks": remarks,
-                }
-            }
-            producer.produce(CRAWLED_DATA_TOPIC, json.dumps(error_message).encode('utf-8'), callback=delivery_report)
-            print(f"Retry sent to CONSUMER 1 AGAIN: {error_message}")
-            producer.flush()
+        # if retry_count < MAX_RETRIES - 1:
+        #     # Republish message with incremented retry_count
+        #     republish_message(url, retry_count + 1)
+        # else:
+        #     # Publish error message after exhausting retries
+        #     remarks = f"Failed to fetch {url} after {MAX_RETRIES} retries: {e}"
+        #     error_message = {
+        #         "type": "error",
+        #         "data": {
+        #             "product_url": url,
+        #             "remarks": remarks,
+        #         }
+        #     }
+        #     producer.produce(CRAWLED_DATA_TOPIC, json.dumps(error_message).encode('utf-8'), callback=delivery_report)
+            # print(f"Retry sent to CONSUMER 1 AGAIN: {error_message}")
+            # producer.flush()
 
-def republish_message(url, retry_count):
-    """
-        > This function will resend the failed url to crawl to the first consumer.
-        > retry_count will track the no of times the crawler run for the failed url till success
-        > If the url still failed till the max_retires then the url will be send to send consumer to save to db in error_url tables
-    """
+# def republish_message(url, retry_count):
+#     """
+#         > This function will resend the failed url to crawl to the first consumer.
+#         > retry_count will track the no of times the crawler run for the failed url till success
+#         > If the url still failed till the max_retires then the url will be send to send consumer to save to db in error_url tables
+#     """
 
-    retry_message = {
-        "url": url,
-        "retry_count": retry_count
-    }
-    print(f"Republishing message: {retry_message}")
-    producer.produce(KAFKA_URL_TOPIC, json.dumps(retry_message).encode('utf-8'))
-    producer.flush()
+#     retry_message = {
+#         "url": url,
+#         "retry_count": retry_count
+#     }
+#     print(f"Republishing message: {retry_message}")
+#     producer.produce(KAFKA_URL_TOPIC, json.dumps(retry_message).encode('utf-8'))
+#     producer.flush()
 
 def consume_messages():
     consumer.subscribe([KAFKA_URL_TOPIC])

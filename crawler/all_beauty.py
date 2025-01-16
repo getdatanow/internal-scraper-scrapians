@@ -33,6 +33,7 @@ def clean_text(text):
 
 
 def fetch_page(url):
+    print('inside  fetch page')
     response = hrequests.get(url, verify=False)
     
     if not (200 <= response.status_code < 300):
@@ -48,7 +49,7 @@ def fetch_page(url):
 # breakpoint()
 
 def parse_html(response_text):
-  
+    print('inside parse_html')
     selector = Selector(response_text)
     description = selector.xpath('(//div[@id="product-description-content-lg-2"]//p//text())').getall()
     rating = selector.xpath("//main[@id='mainContent']/@data-product-star-rating").get()
@@ -70,29 +71,28 @@ def parse_html(response_text):
     # Step 3: Convert to JSON object
     try:
         parsed_data = json.loads(json_like_data)
-        print("Clean JSON Data:")
+        print("Clean JSON Data")
     except json.JSONDecodeError as e:
         print("Failed to parse JSON:", e)
     # breakpoint()
     
 
-    with open('json_data.json', 'w') as p:
-        json.dump(parsed_data, p, ensure_ascii=False, indent=4)
+    # with open('json_data.json', 'w') as p:
+    #     json.dump(parsed_data, p, ensure_ascii=False, indent=4)
     # breakpoint()
-
+    print('hello 1')
     name = parsed_data[0]['pageTitle']
     pageCategory = parsed_data[0]['pageCategory']
     price = parsed_data[0]['productDetails'][0]['productPrice']
     sku = parsed_data[0]['productDetails'][0]['productSKU']
     productStatus = parsed_data[0]['productDetails'][0]['productStatus']
-
-
+    print('hello 2')
     review_Data=selector.xpath('//script[@id="productSchema"]').get()
     json_string = re.search(r'\{.*\}', review_Data, re.DOTALL).group()
     json_data1 = json.loads(json_string)
     # with open('reviews.json','w')as f:
     #     json.dump(json_data1, f , ensure_ascii=False, indent=4)
-
+    print('hello 3')
     productGroupId = json_data1['productGroupID']
     brand = json_data1['brand']['name']
     mpn = json_data1['hasVariant'][0]['mpn']
@@ -100,7 +100,7 @@ def parse_html(response_text):
     itemconditon = json_data1['hasVariant'][0]['offers']['itemCondition']
     availability = json_data1['hasVariant'][0]['offers']['availability']
     image = json_data1['hasVariant'][0]['image']
-
+    print('hello 4')
     reviews = json_data1['review']
     reviews_data = []
     for review in reviews:
@@ -122,12 +122,7 @@ def parse_html(response_text):
 
         }
         reviews_data.append(review)
-
-
-
-    
-
-
+    print('hello 5')
     all_details ={
         'name':name,
         'brand':brand,
@@ -144,8 +139,6 @@ def parse_html(response_text):
         'cleaned_description':clean_description,
         'product_reviews ' : reviews_data  ,
         'productGroupId':productGroupId,
-
-        
 
         }
 
@@ -186,21 +179,18 @@ def save_to_file(data, url):
         print(f"failed to save: {e}")
 
 
-def main():
-    url = 'https://www.allbeauty.com/roberto-cavalli-nero-assoluto-eau-de-parfum/11210313.html?rctxt=default'
+def main(url):
+    print('inside main')
     response_data =fetch_page(url)
 
     html_details =parse_html(response_data)
-    all_details = {
-        "url": url,
-        
-        **html_details,
-        
-    }
+    print(f'data:{html_details}')
     
-    save_to_file(all_details, url)
-
+    save_to_file(html_details, url)
+    return html_details
 
 
 if __name__ == "__main__":
-    main()
+    print('started process')
+    url = 'https://www.allbeauty.com/roberto-cavalli-nero-assoluto-eau-de-parfum/11210313.html?rctxt=default'
+    main(url)
