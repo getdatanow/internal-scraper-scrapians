@@ -34,51 +34,55 @@ RETRY_TIMES = 5
 # Use httpx for the request
 def product_details(url):
     details = {}
-    for attempt in range(RETRY_TIMES):
-        try:
-            with httpx.Client(
-                proxy=PROXY_URL,
-            ) as client:
-                # with httpx.Client() as client:
-                response = client.get(url=url, headers=headers, timeout=10)
 
-                if response.status_code == 200:
-                    selector = Selector(response.text)
-                    details["product_url"] = url
-                    details["title"] = selector.xpath("//title/text()").get()
-                    details["price"] = selector.xpath(
-                        '//span[contains(@class,"a-price a-text-price")]/span[contains(@aria-hidden,"true")]/text()'
-                    ).get().replace('$'," ")
-                    details["image_url"] = (
-                        selector.xpath(
-                            '//img[contains(@id,"landingImage")]/@data-a-dynamic-image'
-                        )
-                        .get()
-                        .split('":')[0]
-                        .replace('{"', "")
-                    )
+    with httpx.Client(proxy=PROXY_URL) as client:
+    # with httpx.Client() as client:
+        response = client.get(url=url, headers=headers, timeout=10)
 
-                    p_details = ""
-                    for tr in selector.xpath(
-                        '//div[contains(@class,"a-section a-spacing-small a-spacing-top-small")]//tr'
-                    ):
-                        key = tr.xpath(
-                            './/span[contains(@class,"a-size-base a-text-bold")]/text()'
-                        ).get()
-                        value = tr.xpath(
-                            './/span[contains(@class,"a-size-base po-break-word")]/text()'
-                        ).get()
-                        if key and value:
-                            p_details += f"{key} : {value}\n"
-                    details["product_details"] = p_details
-                    return details
-                else:
-                    print(
-                        f"Attempt {attempt + 1} failed with status code {response.status_code}"
-                    )
+        if response.status_code == 200:
+            selector = Selector(response.text)
+            details["product_url"] = url
+            details["title"] = selector.xpath("//title/text()").get()
+            details["price"] = selector.xpath(
+                '//span[contains(@class,"a-price a-text-price")]/span[contains(@aria-hidden,"true")]/text()'
+            ).get().replace('$'," ")
+            details["image_url"] = (
+                selector.xpath(
+                    '//img[contains(@id,"landingImage")]/@data-a-dynamic-image'
+                )
+                .get()
+                .split('":')[0]
+                .replace('{"', "")
+            )
 
-        except httpx.RequestError as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
+            p_details = ""
+            for tr in selector.xpath(
+                '//div[contains(@class,"a-section a-spacing-small a-spacing-top-small")]//tr'
+            ):
+                key = tr.xpath(
+                    './/span[contains(@class,"a-size-base a-text-bold")]/text()'
+                ).get()
+                value = tr.xpath(
+                    './/span[contains(@class,"a-size-base po-break-word")]/text()'
+                ).get()
+                if key and value:
+                    p_details += f"{key} : {value}\n"
+            details["product_details"] = p_details
+            return details
+        else:
+            print(
+                f"Failed with status code {response.status_code}"
+            )
 
+def runCrawler(url):
+    print("inside the crawler")
+    scraped_data = product_details(url)
+    if scraped_data:
+        print(f"Data scraping successfull: {scraped_data}")
+    else:
+        print("Scraping failed or returned no data.")
+        scraped_data = None
+
+    return scraped_data
 
 # print(product_details("https://www.amazon.com/dp/157583572X"))

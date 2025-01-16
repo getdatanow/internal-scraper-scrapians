@@ -179,7 +179,7 @@ def save_to_file(data, url):
         print(f"failed to save: {e}")
 
 
-def main(url):
+def runCrawler(url):
     print('inside main')
     response_data =fetch_page(url)
 
@@ -193,4 +193,4 @@ def main(url):
 if __name__ == "__main__":
     print('started process')
     url = 'https://www.allbeauty.com/roberto-cavalli-nero-assoluto-eau-de-parfum/11210313.html?rctxt=default'
-    main(url)
+    runCrawler(url)

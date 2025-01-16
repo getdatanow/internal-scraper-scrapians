@@ -30,3 +30,6 @@ class BathandbodySpiderSpider(scrapy.Spider):
             'description':dat['product'][0]['productInfo']['description'].replace('<p>','').replace('</p>',''),
             # 'sku':dat['sku']
         }
+
+def runCrawler(url):
+    pass

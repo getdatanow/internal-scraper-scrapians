@@ -1,82 +1,82 @@
 from confluent_kafka import Consumer, Producer, KafkaException
 import json
-from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, MAX_RETRIES, delivery_report
+from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, delivery_report, send_slack_alert
 from pathlib import Path
 import sys
-from kafka import KafkaConsumer
+import os
+import base64
+# from kafka import KafkaConsumer
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from crawler import all_beauty
-
-# consumer = Consumer({
-#     'bootstrap.servers': KAFKA_BROKER,
-#     'group.id': 'crawler_group',
-#     'auto.offset.reset': 'earliest'
-# })
-consumer = KafkaConsumer(
-    KAFKA_URL_TOPIC,
-    bootstrap_servers=f"kafka-testing-taraprasad336-d6e1.c.aivencloud.com:19980",
-    client_id = "CONSUMER_CLIENT_ID",
-    group_id = "CONSUMER_GROUP_ID",
-    security_protocol="SSL",
-    ssl_cafile="ca.pem",
-    ssl_certfile="service.cert",
-    ssl_keyfile="service.key",
-)
+from crawler import amazon_crawler
 
 
-producer = Producer({'bootstrap.servers': KAFKA_BROKER})
+def generate_filename_from_url(url):
+    # Encode the URL to bytes and then Base64 encode it
+    base64_encoded = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
+    
+    # Return the Base64-encoded string (without trailing '=' characters)
+    return base64_encoded.rstrip("=")
 
-def crawl_url(url, retry_count):
+def save_to_json(data):
     try:
-        print(f"Attempt {retry_count + 1}: Started crawling {url}")
-        data = all_beauty.main(url)
-        if data:
-            print("Data successfully fetched.")
-            message = {
-                "type": "product_details",
-                "data": data,
-            }
-            # Publish successful message to crawled_data topic
-            producer.produce(CRAWLED_DATA_TOPIC, json.dumps(message).encode('utf-8'), callback=delivery_report)
-            print(f"Data sent to CONSUMER 2: {message}")
-            producer.flush()
-            return  # Exit on success
+        # Ensure output folder exists
+        output_folder = "output"
+        os.makedirs(output_folder, exist_ok=True)
+        
+        # Generate filename
+        filename = generate_filename_from_url(data['product_url'])
+        
+        if filename:
+            file_path = os.path.join(output_folder, filename)
+        else:
+            file_path = os.path.join(output_folder, data['product_url'])
+        
+        # Save file
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+        
+        print(f"File saved at: {file_path}")
     except Exception as e:
-        print(f"Attempt {retry_count + 1}: Failed to fetch {url}. Error: {e}")
-        # if retry_count < MAX_RETRIES - 1:
-        #     # Republish message with incremented retry_count
-        #     republish_message(url, retry_count + 1)
-        # else:
-        #     # Publish error message after exhausting retries
-        #     remarks = f"Failed to fetch {url} after {MAX_RETRIES} retries: {e}"
-        #     error_message = {
-        #         "type": "error",
-        #         "data": {
-        #             "product_url": url,
-        #             "remarks": remarks,
-        #         }
-        #     }
-        #     producer.produce(CRAWLED_DATA_TOPIC, json.dumps(error_message).encode('utf-8'), callback=delivery_report)
-            # print(f"Retry sent to CONSUMER 1 AGAIN: {error_message}")
-            # producer.flush()
+            print(f"failed to save: {e}")
 
-# def republish_message(url, retry_count):
-#     """
-#         > This function will resend the failed url to crawl to the first consumer.
-#         > retry_count will track the no of times the crawler run for the failed url till success
-#         > If the url still failed till the max_retires then the url will be send to send consumer to save to db in error_url tables
-#     """
 
-#     retry_message = {
-#         "url": url,
-#         "retry_count": retry_count
-#     }
-#     print(f"Republishing message: {retry_message}")
-#     producer.produce(KAFKA_URL_TOPIC, json.dumps(retry_message).encode('utf-8'))
-#     producer.flush()
+
+# consumer configuration 
+consumer = Consumer({
+    'bootstrap.servers': KAFKA_BROKER,
+    'group.id': 'crawler_group',
+    'auto.offset.reset': 'earliest'
+})
+# consumer = KafkaConsumer(
+#     KAFKA_URL_TOPIC,
+#     bootstrap_servers=f"kafka-testing-taraprasad336-d6e1.c.aivencloud.com:19980",
+#     client_id = "CONSUMER_CLIENT_ID",
+#     group_id = "CONSUMER_GROUP_ID",
+#     security_protocol="SSL",
+#     ssl_cafile="ca.pem",
+#     ssl_certfile="service.cert",
+#     ssl_keyfile="service.key",
+# )
+
+def crawl_url(url):
+    try:
+        print(f"Started crawling {url}")
+        data = amazon_crawler.runCrawler(url)
+        if data:
+            print("Data received succesfully.")
+            save_to_json(data)
+            return
+    except Exception as e:
+        print(f"Failed to fetch {url}. Error: {e}")
+        # triger to send alert in slack
+        alert_msg = f"Failed to fetch {url}. Error: {e}"
+        try:
+            send_slack_alert(alert_msg)
+        except Exception as e:
+            print(f"Failed to send ALERT: {e}")
 
 def consume_messages():
     consumer.subscribe([KAFKA_URL_TOPIC])
@@ -91,9 +91,8 @@ def consume_messages():
 
             data = json.loads(msg.value().decode('utf-8'))
             url = data.get('url')
-            retry_count = data.get('retry_count', 0)  # Default to 0 if not present
             print(f"Consumed message: {data}")
-            crawl_url(url, retry_count)
+            crawl_url(url)
     finally:
         consumer.close()
 

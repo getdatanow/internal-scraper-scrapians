@@ -1,1 +1,1 @@
-from amazon_crawler import product_details
+from amazon_crawler import runCrawler

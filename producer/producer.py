@@ -1,18 +1,18 @@
-# from confluent_kafka import Producer
-from kafka import KafkaProducer
+from confluent_kafka import Producer
+# from kafka import KafkaProducer
 import csv
 import json
 from config import KAFKA_BROKER, KAFKA_URL_TOPIC, CSV_FILE_PATH, delivery_report
 
-# producer = Producer({'bootstrap.servers': KAFKA_BROKER})
+producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
-producer = KafkaProducer(
-    bootstrap_servers=f"kafka-testing-taraprasad336-d6e1.c.aivencloud.com:19980",
-    security_protocol="SSL",
-    ssl_cafile="ca.pem",
-    ssl_certfile="service.cert",
-    ssl_keyfile="service.key",
-)
+# producer = KafkaProducer(
+#     bootstrap_servers=f"kafka-testing-taraprasad336-d6e1.c.aivencloud.com:19980",
+#     security_protocol="SSL",
+#     ssl_cafile="ca.pem",
+#     ssl_certfile="service.cert",
+#     ssl_keyfile="service.key",
+# )
 
 sent_url_count = 0
 def read_and_publish(csv_file):
@@ -20,11 +20,8 @@ def read_and_publish(csv_file):
     with open(csv_file, mode='r') as file:
         reader = csv.DictReader(file)
         
-        # Print the actual headers to verify they are what we expect
-        # print(reader.fieldnames)  # This will print the headers from the CSV
-        
         for row in reader:
-            url = row.get('URL')  # Use 'URL' as it appears in the CSV headers
+            url = row.get('URL')
             if url:
                 # print(url)  # Process the URL here
                 pass
