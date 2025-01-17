@@ -4,7 +4,8 @@ import multiprocessing
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import os
-from .encoding import generate_filename_from_url
+import base64
+import hashlib
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -12,6 +13,18 @@ sys.path.append(str(Path(__file__).parent.parent))
 from crawler import BellicianSpider
 
 
+def generate_filename_from_url(url, extension="json"):
+    # Create a hash for a shorter, unique filename
+    hash_object = hashlib.md5(url.encode('utf-8'))
+    unique_hash = hash_object.hexdigest()
+    
+    # Optional: Base64 encode for human readability (if needed)
+    base64_encoded = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8').rstrip("=")
+    
+    # Combine base64 and hash for uniqueness and readability
+    filename = f"{base64_encoded[:10]}_{unique_hash[:8]}.{extension}"
+    
+    return filename
 
 def worker(url_queue):
     while not url_queue.empty():
