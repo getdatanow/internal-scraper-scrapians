@@ -1,7 +1,7 @@
 
 from confluent_kafka import Consumer, Producer, KafkaException
 import json
-from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, MAX_RETRIES, delivery_report
+from config import KAFKA_BROKER, KAFKA_URL_TOPIC
 import sys
 from pathlib import Path
 

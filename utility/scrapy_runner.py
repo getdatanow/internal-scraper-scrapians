@@ -4,19 +4,14 @@ import multiprocessing
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import os
-import base64
+from .encoding import generate_filename_from_url
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from crawler import BellicianSpider
 
-def generate_filename_from_url(url):
-    # Encode the URL to bytes and then Base64 encode it
-    base64_encoded = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
-    
-    # Return the Base64-encoded string (without trailing '=' characters)
-    return base64_encoded.rstrip("=")
+
 
 def worker(url_queue):
     while not url_queue.empty():

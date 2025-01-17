@@ -5,44 +5,45 @@ from pathlib import Path
 import sys
 import os
 import base64
+import hashlib
 # from kafka import KafkaConsumer
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from crawler import amazon_crawler
+from crawler import all_beauty
 
 
-def generate_filename_from_url(url):
-    # Encode the URL to bytes and then Base64 encode it
-    base64_encoded = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8')
+def generate_filename_from_url(url, extension="json"):
+    # Create a hash for a shorter, unique filename
+    hash_object = hashlib.md5(url.encode('utf-8'))
+    unique_hash = hash_object.hexdigest()
     
-    # Return the Base64-encoded string (without trailing '=' characters)
-    return base64_encoded.rstrip("=")
+    # Optional: Base64 encode for human readability (if needed)
+    base64_encoded = base64.urlsafe_b64encode(url.encode('utf-8')).decode('utf-8').rstrip("=")
+    
+    # Combine base64 and hash for uniqueness and readability
+    filename = f"{base64_encoded[:10]}_{unique_hash[:8]}.{extension}"
+    
+    return filename
 
-def save_to_json(data):
+def save_to_json(data, url):
     try:
         # Ensure output folder exists
         output_folder = "output"
         os.makedirs(output_folder, exist_ok=True)
         
         # Generate filename
-        filename = generate_filename_from_url(data['product_url'])
-        
-        if filename:
-            file_path = os.path.join(output_folder, filename)
-        else:
-            file_path = os.path.join(output_folder, data['product_url'])
-        
-        # Save file
-        with open(file_path, 'w') as file:
-            json.dump(data, file, indent=4)
+        filename = generate_filename_from_url(url)
+
+        file_path = os.path.join(output_folder, filename)
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
         
         print(f"File saved at: {file_path}")
     except Exception as e:
-            print(f"failed to save: {e}")
-
-
+        print(f"failed to save: {e}")
 
 # consumer configuration 
 consumer = Consumer({
@@ -64,10 +65,10 @@ consumer = Consumer({
 def crawl_url(url):
     try:
         print(f"Started crawling {url}")
-        data = amazon_crawler.runCrawler(url)
+        data = all_beauty.runCrawler(url)
         if data:
             print("Data received succesfully.")
-            save_to_json(data)
+            save_to_json(data, url)
             return
     except Exception as e:
         print(f"Failed to fetch {url}. Error: {e}")
