@@ -10,7 +10,7 @@ import hashlib
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from crawler import BellicianSpider
+from crawler import SweetcareSpider
 
 
 def generate_filename_from_url(url, extension="json"):
@@ -46,9 +46,8 @@ def worker(url_queue):
         })
         # Disable or reduce log output
         settings.set('LOG_LEVEL', 'CRITICAL')
-        
         process = CrawlerProcess(settings)
-        process.crawl(BellicianSpider.BellicianSpider, url=url)
+        process.crawl(SweetcareSpider.SweetcareSpider, url=url)
         process.start()
 
 def run_multiprocessing(urls):

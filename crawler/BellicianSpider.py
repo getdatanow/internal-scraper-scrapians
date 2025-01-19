@@ -11,10 +11,9 @@ class BellicianSpider(scrapy.Spider):
     allowed_domains = ["bellician.com"]
     
     
-    def __init__(self, url=None, output_file=None, *args, **kwargs):
+    def __init__(self, url=None, *args, **kwargs):
         super(BellicianSpider, self).__init__(*args, **kwargs)
         self.url = url
-        self.output_file = output_file
         print("Inside spider: stared crawling for URL: ", self.url)
 
     def start_requests(self):
