@@ -44,7 +44,7 @@ class SweetcareUrlsSpider(scrapy.Spider):
     }
 
     def start_requests(self):
-        print("started the spider")
+        
         yield scrapy.Request("https://sweetcare.com",callback=self.parse)
 
     def parse(self, response):
@@ -68,7 +68,7 @@ class SweetcareUrlsSpider(scrapy.Spider):
                         'url': product_url,
                         'retry_count': 0
                     }
-                    print(f"Message sent: {message}")
+                    print(f"Message sent: {message.url}")
 
                     # Send message to Kafka
                     self.producer.produce(

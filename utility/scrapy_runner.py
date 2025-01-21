@@ -44,8 +44,17 @@ def worker(url_queue):
                 'overwrite': True,
             },
         })
+
+        settings.set('ITEM_PIPELINES', {
+            'settings.pipelines.ErrorHandlingPipeline': 300,
+        })
+        
         # Disable or reduce log output
-        settings.set('LOG_LEVEL', 'CRITICAL')
+        settings.set('LOG_LEVEL', 'DEBUG')
+
+        # Print registered pipelines
+        print("Final Registered Pipelines:", settings.getdict('ITEM_PIPELINES'))
+
         process = CrawlerProcess(settings)
         process.crawl(SweetcareSpider.SweetcareSpider, url=url)
         process.start()

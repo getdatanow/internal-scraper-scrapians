@@ -1,6 +1,6 @@
 from confluent_kafka import Consumer, Producer, KafkaException
 import json
-from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, delivery_report, send_slack_alert
+from config import KAFKA_BROKER, CRAWLED_DATA_TOPIC, KAFKA_URL_TOPIC, delivery_report
 from pathlib import Path
 import sys
 import os
@@ -10,7 +10,7 @@ import hashlib
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-
+from utility.notification import send_slack_alert
 from crawler import all_beauty
 
 

@@ -7,6 +7,8 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 from utility import scrapy_runner
+from utility.notification import send_slack_alert
+
 
 # Configure Kafka consumer
 consumer = Consumer({
@@ -28,6 +30,11 @@ def crawl_url(url):
         p = scrapy_runner.run_multiprocessing(url)
     except Exception as e:
         print(f"Failed to crawl {url}. Error: {e}")
+        alert_msg = f"Failed to crawl {url}. Error: {e}"
+        try:
+            send_slack_alert(alert_msg)
+        except Exception as e:
+            print(f"Failed to send ALERT: {e}")
 
 
 # Kafka message processing logic example

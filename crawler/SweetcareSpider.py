@@ -6,17 +6,14 @@ from lxml.etree import ParserError
 import logging
 from html import unescape
 
-
-
-
 class SweetcareSpider(scrapy.Spider):
     name = "sweetcare_product_spider"
-    # base_url ="https://www.perfumesclub.us/"
-    start_urls = "https://www.sweetcare.com/ru/crescina-transdermic-hfsc-complete-treatment-vials-women-p-015292ce?st=03"
 
-
-
-
+    def __init__(self, url=None, *args, **kwargs):
+        super(SweetcareSpider, self).__init__(*args, **kwargs)
+        self.url = url
+        print("Inside spider: stared crawling for URL: ", self.url)
+    
     def clean_text(self, text):
         if not text:
             return ""
@@ -38,15 +35,9 @@ class SweetcareSpider(scrapy.Spider):
             logging.error(f"Error cleaning text: {e}")
             return ""
 
-    def __init__(self, url=None, output_file=None, *args, **kwargs):
-        super(SweetcareSpider, self).__init__(*args, **kwargs)
-        self.url = url
-        self.output_file = output_file
-        print("Inside spider: stared crawling for URL: ", self.url)
-
     def start_requests(self):
         print(f"started parsing for {self.url}")
-        yield scrapy.Request(url=self.start_urls, callback=self.parse)
+        yield scrapy.Request(url=self.url, callback=self.parse)
 
     def parse(self, response):
         print('inside parser')
@@ -67,8 +58,7 @@ class SweetcareSpider(scrapy.Spider):
             "availability": json_data[0]['offers']['availability'],
             "price" : json_data[0]['offers']['price'],
         }
-
-        print(f"this is the result: {result.urla}")
+        
         yield(result)
         
 
