@@ -6,6 +6,7 @@ zk-multiple-kafka-multiple-schema-registry/*
 full-stack/*
 .idea/
 venv
+.env
 eggs/
 tempCodeRunnerFile.py
 __pycache__/

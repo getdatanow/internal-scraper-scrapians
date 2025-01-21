@@ -1,7 +1,11 @@
 import requests
 import json
+from dotenv import load_dotenv
+import os
 
-SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/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"
+load_dotenv()
+
+SLACK_WEBHOOK_URL = os.getenv('SLACK_WEBHOOK_URL')
 
 def send_slack_alert(message):
     """Send a rich Slack alert with title, color, and attachments"""

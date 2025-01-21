@@ -58,6 +58,13 @@ class SweetcareSpider(scrapy.Spider):
             "availability": json_data[0]['offers']['availability'],
             "price" : json_data[0]['offers']['price'],
         }
+
+        if not result:
+            """send only the product url if there is no url """
+            result = {
+                "url": self.url
+            }
+            yield result
         
         yield(result)
         

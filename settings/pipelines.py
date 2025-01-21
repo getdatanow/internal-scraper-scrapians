@@ -8,13 +8,15 @@ from utility.notification import send_slack_alert
 class ErrorHandlingPipeline:
     def process_item(self, item, spider):
         logging.debug(f"Processing item in ErrorHandlingPipeline...")
-        if not item:
+        if not item or (len(item) == 1 and 'url' in item):
             logging.warning("No data received for item.")
             logging.debug("No data received for this item.")
 
             alert_msg = f"No data received for this item for url: {item.get('url')}"
             try:
+
                 send_slack_alert(alert_msg)
+                logging.info(f"Alert sent with message: {alert_msg}")
             except Exception as e:
                 logging.debug(f"Failed to send ALERT: {e}")
             
