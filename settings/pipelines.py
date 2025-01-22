@@ -14,14 +14,21 @@ class ErrorHandlingPipeline:
 
             alert_msg = f"No data received for this item for url: {item.get('url')}"
             try:
-
                 send_slack_alert(alert_msg)
                 logging.info(f"Alert sent with message: {alert_msg}")
             except Exception as e:
                 logging.debug(f"Failed to send ALERT: {e}")
             
             return None
-            
+
+        if "exception" in item:
+            logging.error(f"Error in parsing: {item["exception"]}")
+            alert_msg = f"Error in parsing: {item["exception"]} \n URL: {item["url"]}"
+            try:
+                send_slack_alert(alert_msg)
+            except Exception as e:
+                logging.debug(f"Failed to send ALERT: {e}")
+
         try:
             return item  
         except Exception as e:

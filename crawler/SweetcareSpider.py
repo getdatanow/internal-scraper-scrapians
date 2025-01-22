@@ -1,8 +1,6 @@
 import scrapy
 import re
 import json
-from lxml import html
-from lxml.etree import ParserError
 import logging
 from html import unescape
 
@@ -36,37 +34,39 @@ class SweetcareSpider(scrapy.Spider):
             return ""
 
     def start_requests(self):
-        print(f"started parsing for {self.url}")
+        print(f"started request for {self.url}")
         yield scrapy.Request(url=self.url, callback=self.parse)
 
     def parse(self, response):
-        print('inside parser')
-        parsed_data = response.xpath('//script[@type="application/ld+json"]//text()').get()
+        try:
+            parsed_data = response.xpath('//script[@type="application/ld+json"]//text()').get()
 
-        match = re.sub(r'[\n\r\t]', '', parsed_data)
-        json_data = json.loads(match)
+            match = re.sub(r'[\n\r\t]', '', parsed_data)
+            json_data = json.loads(match)
 
-        result =  {
-            "url":json_data[0]['url'],
-            "name" :json_data[0]['name'],
-            "sku":json_data[0]['sku'],
-            "image":json_data[0]['image'],
-            "brand": json_data[0]['brand']['name'],
-            "description" : self.clean_text(json_data[0]['description']),
-            "priceCurrency" :json_data[0]['offers']['priceCurrency'],
-            "itemCondition":json_data[0]['offers']['itemCondition'],
-            "availability": json_data[0]['offers']['availability'],
-            "price" : json_data[0]['offers']['price'],
-        }
-
-        if not result:
-            """send only the product url if there is no url """
-            result = {
-                "url": self.url
+            result =  {
+                "url":json_data[0]['url'],
+                "name" :json_data[0]['name'],
+                "sku":json_data[0]['sku'],
+                "image":json_data[0]['image'],
+                "brand": json_data[0]['brand']['name'],
+                "description" : self.clean_text(json_data[0]['description']),
+                "priceCurrency" :json_data[0]['offers']['priceCurrency'],
+                "itemCondition":json_data[0]['offers']['itemCondition'],
+                "availability": json_data[0]['offers']['availability'],
+                "price" : json_data[0]['offers']['price'],
             }
-            yield result
+            
+        except Exception as e:
+            exception = f"Unexpected error in spider: {e}"
+            logging.info(f"Exception sent to the pipeline: {e}")
+            result = {
+                "url":self.url,
+                "exception": exception
+            }
+
+        yield result
         
-        yield(result)
         
 
        
