@@ -3,6 +3,8 @@ import re
 import json
 import logging
 from html import unescape
+from scrapy.utils.url import get_domain
+from datetime import datetime
 
 class SweetcareSpider(scrapy.Spider):
     name = "sweetcare_product_spider"
@@ -45,7 +47,8 @@ class SweetcareSpider(scrapy.Spider):
             json_data = json.loads(match)
 
             result =  {
-                "url":json_data[0]['url'],
+                "source_name":get_domain(response.url).split('.')[0],
+                "product_url":json_data[0]['url'],
                 "name" :json_data[0]['name'],
                 "sku":json_data[0]['sku'],
                 "image":json_data[0]['image'],
@@ -55,6 +58,7 @@ class SweetcareSpider(scrapy.Spider):
                 "itemCondition":json_data[0]['offers']['itemCondition'],
                 "availability": json_data[0]['offers']['availability'],
                 "price" : json_data[0]['offers']['price'],
+                "crawled_date":datetime.now()
             }
             
         except Exception as e:
