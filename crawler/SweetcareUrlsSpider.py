@@ -44,7 +44,7 @@ class SweetcareUrlsSpider(scrapy.Spider):
     }
 
     def start_requests(self):
-        
+        print("Started running the discovery")        
         yield scrapy.Request("https://sweetcare.com",callback=self.parse)
 
     def parse(self, response):
@@ -61,23 +61,21 @@ class SweetcareUrlsSpider(scrapy.Spider):
                     yield {
                         'url':'https://www.sweetcare.com'+s.xpath('//a/@href').get()
                     }
-                    product_url = 'https://www.sweetcare.com'+s.xpath('//a/@href').get()
+                    product_url = 'https://www.sweetcare.com'+ (s.xpath('//a/@href').get() or '')
 
                     # Create message for Kafka
                     message = {
                         'url': product_url,
-                        'retry_count': 0
                     }
-                    print(f"Message sent: {message.url}")
-
                     # Send message to Kafka
                     self.producer.produce(
                         KAFKA_URL_TOPIC, 
                         json.dumps(message).encode('utf-8'), 
                         callback=delivery_report
                     )
-                except:
-                    pass
+                    print(f"Message sent: {message['url']}")
+                except Exception as e:
+                    print(f"Error sending message to kafka {e}")
         self.headers['Referer']=response.meta['ref']
         if len(response.json())>4:
             yield scrapy.Request('https://www.sweetcare.com/ajax/listProductsH.ashx?a=loadMore&p='+str(page)+'&st=2',callback=self.parse_products_url,headers=self.headers,dont_filter=True,meta={'page':page,'ref':response.meta['ref']})
