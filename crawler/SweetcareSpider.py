@@ -47,7 +47,7 @@ class SweetcareSpider(scrapy.Spider):
             json_data = json.loads(match)
 
             result =  {
-                "source_name":get_domain(response.url).split('.')[0],
+                "source_name":'sweetcare',
                 "product_url":json_data[0]['url'],
                 "name" :json_data[0]['name'],
                 "sku":json_data[0]['sku'],
