@@ -3,7 +3,6 @@ import re
 import json
 import logging
 from html import unescape
-from scrapy.utils.url import get_domain
 from datetime import datetime
 
 class SweetcareSpider(scrapy.Spider):
