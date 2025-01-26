@@ -35,34 +35,43 @@ class SweetcareSpider(scrapy.Spider):
             return ""
 
     def start_requests(self):
-        print(f"started request for {self.url}")
+        print(f"started request for {self.url}") 
+        logging.info(f"started request for {self.url}")
         yield scrapy.Request(url=self.url, callback=self.parse)
 
     def parse(self, response):
+        print("Inside parse!!")
         try:
             parsed_data = response.xpath('//script[@type="application/ld+json"]//text()').get()
 
+            if not parsed_data:
+                print(f"No parsed data found for URL: {response.url}")
+                return
+
             match = re.sub(r'[\n\r\t]', '', parsed_data)
+        
             json_data = json.loads(match)
 
-            result =  {
-                "source_name":'sweetcare',
-                "product_url":json_data[0]['url'],
-                "name" :json_data[0]['name'],
-                "sku":json_data[0]['sku'],
-                "image":json_data[0]['image'],
-                "brand": json_data[0]['brand']['name'],
-                "description" : self.clean_text(json_data[0]['description']),
-                "priceCurrency" :json_data[0]['offers']['priceCurrency'],
-                "itemCondition":json_data[0]['offers']['itemCondition'],
-                "availability": json_data[0]['offers']['availability'],
-                "price" : json_data[0]['offers']['price'],
-                "crawled_date":datetime.now()
+            result = {
+                "source_name": 'sweetcare',
+                "product_url": json_data.get('url', ''),
+                "name": json_data.get('name', ''),
+                "sku": json_data.get('sku', ''),
+                "image": json_data.get('image', ''),
+                "brand": json_data.get('brand', {}).get('name', ''),
+                "description": self.clean_text(json_data.get('description', '')),
+                "priceCurrency": json_data.get('offers', {}).get('priceCurrency', ''),
+                "itemCondition": json_data.get('offers', {}).get('itemCondition', ''),
+                "availability": json_data.get('offers', {}).get('availability', ''),
+                "price": json_data.get('offers', {}).get('price', ''),
+                "crawled_date": datetime.now()
             }
-            
+
+            print(f"result obtained for url: {result}")
         except Exception as e:
             exception = f"Unexpected error in spider: {e}"
             logging.info(f"Exception sent to the pipeline: {e}")
+            
             result = {
                 "url":self.url,
                 "exception": exception
