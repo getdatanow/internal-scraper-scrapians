@@ -40,34 +40,64 @@ class SweetcareSpider(scrapy.Spider):
         yield scrapy.Request(url=self.url, callback=self.parse)
 
     def parse(self, response):
-        print("Inside parse!!")
-        try:
-            parsed_data = response.xpath('//script[@type="application/ld+json"]//text()').get()
+        url = response.url
+        crawl_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            if not parsed_data:
-                print(f"No parsed data found for URL: {response.url}")
+        try:
+
+            """Parse product pages."""
+            dat = response.xpath('//script[@type="application/ld+json"]//text()').get()
+            if not dat:
+                logging.error(f"No JSON-LD data found for URL: {url}")
                 return
 
-            match = re.sub(r'[\n\r\t]', '', parsed_data)
-        
-            json_data = json.loads(match)
+            try:
+                match = re.sub(r'[\n\r\t]', '', dat)
+                dat = json.loads(match)
+            except json.JSONDecodeError as e:
+                logging.error(f"JSON parsing error for URL: {url}, Error: {str(e)}")
+                return
+            
+            data_source = dat[0] if isinstance(dat, list) and len(dat) > 0 else dat
+            try:
+                product_name = data_source.get('name', None)
+                priceCurrency = data_source.get('offers', {}).get('priceCurrency', None) if isinstance(data_source, dict) else None
+                product_price = data_source.get('offers', {}).get('price', None) if isinstance(data_source, dict) else None
+                product_image = data_source.get('image', None)
+                brand = data_source.get('brand', {}).get('name', None)
+                itemCondition = data_source.get('offers', {}).get('itemCondition', None) if isinstance(data_source, dict) else None
+                description = (
+                    self.clean_text(data_source[0].get('description', '')) if isinstance(data_source, list) and len(data_source) > 0 and isinstance(data_source[0], dict)
+                    else self.clean_text(data_source.get('description', ''))
+                )
+                sku = data_source.get('sku', None)
+                availability = data_source.get('offers', {}).get('availability', None) if isinstance(data_source, dict) else None
+            except (KeyError, TypeError):
+                product_name = None
+                priceCurrency = None
+                product_price = None
+                product_image = None
+                description = None
+                sku = None
+                brand = None
+                itemCondition = None
+                availability = None
 
-            result = {
-                "source_name": 'sweetcare',
-                "product_url": json_data.get('url', ''),
-                "name": json_data.get('name', ''),
-                "sku": json_data.get('sku', ''),
-                "image": json_data.get('image', ''),
-                "brand": json_data.get('brand', {}).get('name', ''),
-                "description": self.clean_text(json_data.get('description', '')),
-                "priceCurrency": json_data.get('offers', {}).get('priceCurrency', ''),
-                "itemCondition": json_data.get('offers', {}).get('itemCondition', ''),
-                "availability": json_data.get('offers', {}).get('availability', ''),
-                "price": json_data.get('offers', {}).get('price', ''),
-                "crawled_date": datetime.now()
+            all_details = {
+                'crawl_date': crawl_date,
+                "source_name": "sweetcare",
+                'product_url': url,
+                'product_name': product_name,
+                'price_currency': priceCurrency,
+                'product_price': product_price,
+                'brand': brand,
+                'itemCondition': itemCondition,
+                'availability': availability,
+                'product_image': product_image,
+                'description': description,
+                'sku': sku
             }
-
-            print(f"result obtained for url: {result}")
+            yield all_details
         except Exception as e:
             exception = f"Unexpected error in spider: {e}"
             logging.info(f"Exception sent to the pipeline: {e}")
@@ -76,9 +106,5 @@ class SweetcareSpider(scrapy.Spider):
                 "url":self.url,
                 "exception": exception
             }
-
-        yield result
-        
-        
-
-       
+            
+            yield result

@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import logging
 
 load_dotenv()
-connection_string = "mongodb+srv://jyabadb:fakepass@cluster0.csfrd.mongodb.net/"
+connection_string = os.getenv("MONGODB_CONNECTION_STRING")
 try:
     client = MongoClient(connection_string)
     print("Successful connection to MongoDB")
@@ -14,7 +14,7 @@ try:
     print("Database accessed successfully")
     
     # Check if the collection exists
-    collection = db["ecommerce_test_new"]
+    collection = db["ecommerce"]
     print("Collection accessed successfully")
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
@@ -28,6 +28,9 @@ def save_to_db(data, status):
         handle the failure status to save data to db in error collection
         """
         collection = db["error_status"]
+    else:
+        collection = db["ecommerce"]
+
         
     # Insert into MongoDB
     logging.info(f"Trying to save data to monogodb. Data: {data}")
