@@ -21,7 +21,7 @@ def worker(url_queue):
         })
         
         # Disable or reduce log output
-        settings.set('LOG_LEVEL', 'ERROR')
+        settings.set('LOG_LEVEL', 'DEBUG')
 
         process = CrawlerProcess(settings)
         process.crawl(SweetcareSpider.SweetcareSpider, url=url)
