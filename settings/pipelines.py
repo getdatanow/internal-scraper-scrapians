@@ -45,25 +45,25 @@ class ErrorHandlingPipeline:
             except Exception as e:
                 logging.debug(f"Failed to send ALERT: {e}")
         else:
-            # try:
-            #     """save data to db for success"""        
-            #     if item:
-            #         logging.info(f"Data send for saving: {item}")
-            #         print(f"Data send for saving: {item}")
-            #         save_to_db(item, status="success")
-            #         print(f"Data is saved for success URL: {item["product_url"]}")
-            #     else:
-            #         logging.info(f"No data to save in db")
-            # except Exception as e:
-            #     logging.error(f"Error saving data: {e} ")
-
             try:
-                """save data to csv file"""
-                self.writer.writerow([self.index, item['url']])
-                self.index += 1
-                self.file.flush()
-                return item
+                """save data to db for success"""        
+                if item:
+                    logging.info(f"Data send for saving: {item}")
+                    print(f"Data send for saving: {item}")
+                    save_to_db(item, status="success")
+                    print(f"Data is saved for success URL: {item["product_url"]}")
+                else:
+                    logging.info(f"No data to save in db")
             except Exception as e:
-                logging.error(f"Failed to save in json: {e}")
+                logging.error(f"Error saving data: {e} ")
+
+            # try:
+            #     """save data to csv file"""
+            #     self.writer.writerow([self.index, item['url']])
+            #     self.index += 1
+            #     self.file.flush()
+            #     return item
+            # except Exception as e:
+            #     logging.error(f"Failed to save in json: {e}")
 
         
