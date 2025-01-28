@@ -2,6 +2,7 @@ from scrapy.crawler import CrawlerProcess
 from pathlib import Path
 import sys
 from scrapy.utils.log import configure_logging
+from scrapy.utils.project import get_project_settings
 import logging
 
 # Set up logging
@@ -20,8 +21,17 @@ def start_crawl():
     try:
         print("Starting the discovery spider...")
 
+        settings = get_project_settings()
+        settings.set('ITEM_PIPELINES', {
+            'settings.pipelines.ErrorHandlingPipeline': 300,
+        })
+
+        # Disable or reduce log output
+        settings.set('LOG_LEVEL', 'ERROR')
+
+
         # Create a CrawlerProcess instance
-        process = CrawlerProcess()
+        process = CrawlerProcess(settings)
 
         # Run the crawler
         process.crawl(SweetcareUrlsSpider.SweetcareUrlsSpider)
