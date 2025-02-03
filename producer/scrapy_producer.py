@@ -22,21 +22,19 @@ def start_crawl():
         print("Starting the discovery spider...")
 
         settings = get_project_settings()
-        settings.set('ITEM_PIPELINES', {
-            'crawler.pipelines.DiscoveryProcessingPipeline': 400,
-
-        })
-
+        # settings.set('ITEM_PIPELINES', {
+        #     'crawler.pipelines.DiscoveryProcessingPipeline': 400,
+        # })
 
         # Disable or reduce log output
-        settings.set('LOG_LEVEL', 'ERROR')
+        settings.set('LOG_LEVEL', 'INFO')
 
 
         # Create a CrawlerProcess instance
         process = CrawlerProcess(settings)
 
         # Run the crawler
-        process.crawl(asos_urls.AsosUrlsSpider)
+        process.crawl(BellicianUrlsSpider.BellicianUrlsSpider)
         process.start() 
 
     except ModuleNotFoundError as e:

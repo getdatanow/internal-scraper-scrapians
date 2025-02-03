@@ -16,15 +16,15 @@ def worker(url_queue):
          # Set up the settings for the crawler
         settings = get_project_settings()
 
-        settings.set('ITEM_PIPELINES', {
-            'settings.pipelines.DataProcessingPipeline ': 300,
-        })
+        # settings.set('ITEM_PIPELINES', {
+        #     'crawler.pipelines.DataProcessingPipeline ': 300,
+        # })
         
         # Disable or reduce log output
         settings.set('LOG_LEVEL', 'ERROR')
 
         process = CrawlerProcess(settings)
-        process.crawl(SweetcareSpider.SweetcareSpider, url=url)
+        process.crawl(BellicianSpider.BellicianSpider, url=url)
         process.start()
 
 def run_multiprocessing(urls):
