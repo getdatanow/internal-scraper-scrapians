@@ -40,7 +40,6 @@ class AsosUrlsSpider(scrapy.Spider):
             if 'product-sitemap' in url:
                 yield scrapy.Request(url,callback=self.parse,headers=self.headers)
             else:
-                logger.info(f"New url: {url}")
                 yield {
                     'url':url
                 }
