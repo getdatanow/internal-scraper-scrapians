@@ -14,7 +14,7 @@ from utility.notification import send_slack_alert
 consumer = Consumer({
     'bootstrap.servers': KAFKA_BROKER,
     'group.id': 'crawler_group',
-    'auto.offset.reset': 'latest'
+    'auto.offset.reset': 'earliest'
 })
 
 def crawl_url(url):
