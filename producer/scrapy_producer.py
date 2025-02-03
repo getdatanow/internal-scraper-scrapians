@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Update the spider as needed
-from crawler import BellicianUrlsSpider, SweetcareUrlsSpider
+from crawler import BellicianUrlsSpider, SweetcareUrlsSpider, asos_urls
 
 
 # Function to start the crawler
@@ -34,7 +34,7 @@ def start_crawl():
         process = CrawlerProcess(settings)
 
         # Run the crawler
-        process.crawl(SweetcareUrlsSpider.SweetcareUrlsSpider)
+        process.crawl(asos_urls.AsosUrlsSpider)
         process.start() 
 
     except ModuleNotFoundError as e:
