@@ -11,7 +11,7 @@ class AsosUrlsSpider(scrapy.Spider):
         'RETRY_HTTP_CODES': [500, 502, 503, 504, 429, 403],
         'RETRY_ENABLED': True,
         'ITEM_PIPELINES': {
-            "scrapy_crawlers.pipelines.DuplicatesPipeline": 300,
+            "crawler.pipelines.DuplicatesPipeline": 300,
         },
         'ROBOTSTXT_OBEY': False
     }
@@ -40,6 +40,7 @@ class AsosUrlsSpider(scrapy.Spider):
             if 'product-sitemap' in url:
                 yield scrapy.Request(url,callback=self.parse,headers=self.headers)
             else:
+                logger.info(f"New url: {url}")
                 yield {
                     'url':url
                 }

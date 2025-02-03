@@ -23,11 +23,11 @@ def start_crawl():
 
         settings = get_project_settings()
         settings.set('ITEM_PIPELINES', {
-            'settings.pipelines.DataProcessingPipeline': 300,
+            'crawler.pipelines.DiscoveryProcessingPipeline': 300,
         })
 
         # Disable or reduce log output
-        settings.set('LOG_LEVEL', 'ERROR')
+        settings.set('LOG_LEVEL', 'INFO')
 
 
         # Create a CrawlerProcess instance
