@@ -10,6 +10,11 @@ class BellicianSpider(scrapy.Spider):
     name = "bellician"
     allowed_domains = ["bellician.com"]
     
+    custom_settings = {    
+        'ITEM_PIPELINES': {
+            'crawler.pipelines.DataProcessingPipeline': 300,
+        },
+    }
     
     def __init__(self, url=None, *args, **kwargs):
         super(BellicianSpider, self).__init__(*args, **kwargs)
@@ -29,7 +34,6 @@ class BellicianSpider(scrapy.Spider):
             'description':dat['description'],
             'sku':dat['sku']
         }
-        print(f'Result for URL: {self.url}::{result_data}')
         yield result_data
 
     def error_back(self, failure):
