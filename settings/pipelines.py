@@ -2,15 +2,18 @@ import logging
 import sys
 from pathlib import Path
 import csv
+from itemadapter import ItemAdapter
+from scrapy.exceptions import DropItem
 
 sys.path.append(str(Path(__file__).parent.parent))
 from utility.notification import send_slack_alert
 from utility.save_data import save_to_db
 
-class ErrorHandlingPipeline:
+class DataProcessingPipeline :
     def open_spider(self, spider):
         """Open CSV file and write header when spider starts."""
-        self.file = open('scraped_urls.csv', 'w', newline='', encoding='utf-8')
+        filename = f"output_{spider.name}.csv"
+        self.file = open(filename, 'w', newline='', encoding='utf-8')
         self.writer = csv.writer(self.file)
         self.writer.writerow(['Index', 'URL'])
         self.index = 1
@@ -20,7 +23,7 @@ class ErrorHandlingPipeline:
         self.file.close()
 
     def process_item(self, item, spider):
-        logging.debug(f"Processing item in ErrorHandlingPipeline...")
+        logging.debug(f"Processing item in DataProcessingPipeline...")
         # if not item or (len(item) == 1 and 'url' in item):
         #     logging.warning("No data received for item.")
         #     logging.debug("No data received for this item.")
@@ -67,3 +70,14 @@ class ErrorHandlingPipeline:
             #     logging.error(f"Failed to save in json: {e}")
 
         
+class DuplicatesPipeline:
+    def __init__(self):
+        self.ids_seen = set()
+
+    def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
+        if adapter["url"] in self.ids_seen:
+            raise DropItem(f"Item ID already seen: {adapter['url']}")
+        else:
+            self.ids_seen.add(adapter["url"])
+            return item
