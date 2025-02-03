@@ -23,7 +23,7 @@ def start_crawl():
 
         settings = get_project_settings()
         settings.set('ITEM_PIPELINES', {
-            'settings.pipelines.ErrorHandlingPipeline': 300,
+            'settings.pipelines.DataProcessingPipeline': 300,
         })
 
         # Disable or reduce log output
