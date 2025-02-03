@@ -1,18 +1,25 @@
 import scrapy
 import re
+from scrapy.utils.project import get_project_settings
+
 
 class AsosUrlsSpider(scrapy.Spider):
     name = "asos_urls"
     allowed_domains = ["asos.com"]
     start_urls = ["https://asos.com"]
 
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        spider = super().from_crawler(crawler, *args, **kwargs)
+        pipelines = dict(crawler.settings.get('ITEM_PIPELINES', {}))
+        pipelines['crawler.pipelines.DuplicatesPipeline'] = 400
+        crawler.settings.set('ITEM_PIPELINES', pipelines)
+        return spider
+    
     custom_settings = {
         'RETRY_TIMES': 10,
         'RETRY_HTTP_CODES': [500, 502, 503, 504, 429, 403],
         'RETRY_ENABLED': True,
-        'ITEM_PIPELINES': {
-            "crawler.pipelines.DuplicatesPipeline": 300,
-        },
         'ROBOTSTXT_OBEY': False
     }
 
@@ -33,6 +40,8 @@ class AsosUrlsSpider(scrapy.Spider):
     }
 
     def start_requests(self):
+        pipelines = self.crawler.settings.getdict('ITEM_PIPELINES')
+        print(f"Registered Pipelines: {pipelines}")  # Debug output
         yield scrapy.Request('https://www.asos.com/product-sitemap-index-COM.xml',callback=self.parse,headers=self.headers)
 
     def parse(self, response):
