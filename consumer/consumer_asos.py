@@ -14,6 +14,8 @@ from utility.notification import send_slack_alert
 from crawler import asos_crawler
 
 
+KAFKA_URL_TOPIC = "urls_asos"
+
 # def generate_filename_from_url(url, extension="json"):
 #     # Create a hash for a shorter, unique filename
 #     hash_object = hashlib.md5(url.encode('utf-8'))

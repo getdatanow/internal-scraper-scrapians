@@ -5,6 +5,7 @@ import json
 from config import KAFKA_BROKER, KAFKA_URL_TOPIC, CSV_FILE_PATH, delivery_report
 import os
 
+KAFKA_URL_TOPIC = "urls_asos"
 CSV_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output_asos_urls.csv")
 
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
